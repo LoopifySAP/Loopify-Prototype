@@ -1,1 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f5ec">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>LOOPIFY — Your mindful day</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="https://loopifysap.github.io/Loopify/" aria-label="Loopify home">
+    <img src="logo.png" alt="Loopify logo" class="brand-logo">
+    <span>LOOPIFY<span class="dot">.</span></span>
+  </a>
+
+  <p class="eyebrow side-label">YOUR SPACE</p>
+  <nav class="side-nav" aria-label="Dashboard navigation">
+    <button class="nav-item active" data-view="overview">⌂ <span>Overview</span></button>
+    <button class="nav-item" data-view="tracker">◷ <span>Screen time</span></button>
+    <button class="nav-item" data-view="challenges">✳ <span>Daily challenges</span></button>
+    <button class="nav-item" data-view="progress">▥ <span>Habit progress</span></button>
+    <button class="nav-item" data-view="community">♧ <span>Community</span></button>
+    <button class="nav-item" data-view="rewards">✦ <span>Eco-Points</span></button>
+    <button class="nav-item" data-view="coach">☼ <span>Mindful coach</span></button>
+  </nav>
+
+  <div class="sidebar-note">
+    <strong>Small steps count.</strong>
+    <p>Kamu tidak harus mengubah semuanya sekaligus.</p>
+  </div>
+  <a class="back-link" href="https://loopifysap.github.io/Loopify/">← Kembali ke landing page</a>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">YOUR MINDFUL DAY</p>
+      <p id="currentDate" class="muted">One small step at a time.</p>
+    </div>
+    <div class="top-actions">
+      <span class="demo"><i></i> Demo mode</span>
+      <button class="profile-button" id="profileButton" type="button" aria-label="Open profile settings">
+        <img id="profileAvatar" alt="Profile avatar">
+      </button>
+    </div>
+  </header>
+
+  <section class="view active" id="view-overview">
+    <div class="welcome">
+      <div>
+        <p class="eyebrow">WELCOME BACK</p>
+        <h1>Good <span id="greetingTime">day</span>, <em id="overviewUsername">Naya.</em></h1>
+        <p class="muted">Lebih mindful, bukan lebih sempurna. Yuk mulai dari hal kecil.</p>
+      </div>
+      <span class="pill">✳ <b id="streakValue">3-day streak</b></span>
+    </div>
+
+    <div class="stats">
+      <article class="card screen-card">
+        <div class="card-top">
+          <span class="eyebrow">SCREEN TIME TODAY</span>
+          <span class="bubble">◷</span>
+        </div>
+        <strong class="big" id="screenTimeValue">5j 34m</strong>
+        <p class="muted">Target harian <b id="screenTargetLabel">5j</b></p>
+        <div class="track"><div id="screenProgressBar"></div></div>
+        <div class="card-foot">
+          <span id="screenPercent">100% dari target</span>
+          <button class="link" data-go="tracker">Lihat detail →</button>
+        </div>
+      </article>
+
+      <article class="card stat-card">
+        <p class="eyebrow">ECO-POINTS</p>
+        <span class="bubble">✳</span>
+        <strong class="big" id="pointsValue">70</strong>
+        <p class="muted">Poin terkumpul</p>
+        <button class="link push" data-go="rewards">Lihat reward →</button>
+      </article>
+
+      <article class="card stat-card">
+        <p class="eyebrow">CHALLENGES</p>
+        <span class="bubble peach">✓</span>
+        <strong class="big"><span id="challengeDone">1</span><small>/3</small></strong>
+        <p class="muted">Selesai hari ini</p>
+        <button class="link push" data-go="challenges">Lanjutkan →</button>
+      </article>
+    </div>
+
+    <div class="bottom-grid">
+      <article class="card">
+        <div class="card-top">
+          <span class="eyebrow">A LITTLE PROGRESS</span>
+          <button class="link" data-go="progress">Lihat progres →</button>
+        </div>
+        <h3>Hari ini, pelan-pelan.</h3>
+        <div class="week" id="weekGrid"></div>
+        <div class="soft">
+          <span class="bubble">☼</span>
+          <div>
+            <b>Progress, not pressure.</b>
+            <p class="muted">Setiap jeda dari layar adalah kesempatan untuk kembali ke dunia nyata.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="card today">
+        <p class="eyebrow">TODAY'S MICRO-CHALLENGE</p>
+        <h3>Jeda 10 menit <span class="leaf">🌿</span></h3>
+        <p class="muted">Letakkan ponsel sejenak, minum air, atau lihat ke luar jendela.</p>
+        <p class="challenge-meta">◷ 10 menit　✳ +10 Eco-Points</p>
+        <button class="btn full" data-go="challenges">Lihat tantangan →</button>
+      </article>
+    </div>
+  </section>
+
+  <section class="view" id="view-tracker">
+    <div class="page-head">
+      <p class="eyebrow">YOUR DIGITAL BALANCE</p>
+      <h1>Screen time <em>tracker.</em></h1>
+      <p class="muted">Kenali pola penggunaan layar tanpa rasa bersalah.</p>
+    </div>
+    <div class="two-col">
+      <article class="card">
+        <p class="eyebrow">TODAY'S SCREEN TIME</p>
+        <strong class="big" id="trackerTime">5j 34m</strong>
+
+        <label for="screenHours">Jam</label>
+        <input id="screenHours" type="number" min="0" max="23" value="5">
+
+        <label for="screenMinutes">Menit</label>
+        <input id="screenMinutes" type="number" min="0" max="59" value="34">
+
+        <label for="screenTarget">Target harian</label>
+        <select id="screenTarget">
+          <option value="3">3 jam</option>
+          <option value="4">4 jam</option>
+          <option value="5" selected>5 jam</option>
+          <option value="6">6 jam</option>
+          <option value="8">8 jam</option>
+        </select>
+
+        <button class="btn full" id="saveScreenTime">Simpan screen time</button>
+        <p id="trackerMessage" class="message"></p>
+      </article>
+
+      <article class="card">
+        <p class="eyebrow">A GENTLE REMINDER</p>
+        <h2>Awareness before change.</h2>
+        <p class="muted">Data prototype diisi manual, bukan diambil otomatis dari perangkatmu.</p>
+        <div class="soft">
+          <span class="bubble">☼</span>
+          <div>
+            <b>Take a mindful break</b>
+            <p class="muted">Berhenti sejenak setelah menyelesaikan satu aktivitas digital.</p>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="view" id="view-challenges">
+    <div class="page-head">
+      <p class="eyebrow">SMALL ACTIONS, REAL IMPACT</p>
+      <h1>Daily <em>challenges.</em></h1>
+      <p class="muted">Pilih aktivitas sederhana untuk membangun kebiasaan mindful.</p>
+    </div>
+    <div class="challenge-grid">
+      <article class="card challenge">
+        <div class="illustration">🌿</div>
+        <p class="eyebrow">10 MINUTES</p>
+        <h3>Jeda dari layar</h3>
+        <p class="muted">Letakkan ponsel dan beri waktu untuk mata serta pikiran beristirahat.</p>
+        <button class="btn full challenge-complete" data-key="break" data-points="10">Selesaikan · +10 poin</button>
+      </article>
+
+      <article class="card challenge">
+        <div class="illustration">🚶</div>
+        <p class="eyebrow">15 MINUTES</p>
+        <h3>Jalan tanpa HP</h3>
+        <p class="muted">Nikmati perjalanan singkat sambil memperhatikan lingkungan.</p>
+        <button class="btn full challenge-complete" data-key="walk" data-points="15">Selesaikan · +15 poin</button>
+      </article>
+
+      <article class="card challenge">
+        <div class="illustration">🪴</div>
+        <p class="eyebrow">5 MINUTES</p>
+        <h3>Rawat tanaman</h3>
+        <p class="muted">Siram tanaman atau rapikan sudut hijau di rumah.</p>
+        <button class="btn full challenge-complete" data-key="plant" data-points="10">Selesaikan · +10 poin</button>
+      </article>
+    </div>
+    <p id="challengeMessage" class="message"></p>
+  </section>
+
+  <section class="view" id="view-progress">
+    <div class="page-head">
+      <p class="eyebrow">YOUR JOURNEY</p>
+      <h1>Habit <em>progress.</em></h1>
+      <p class="muted">Konsistensi tumbuh dari langkah kecil yang diulang.</p>
+    </div>
+
+    <div class="stats">
+      <article class="card stat-card">
+        <p class="eyebrow">CURRENT STREAK</p>
+        <span class="bubble">✳</span>
+        <strong class="big" id="progressStreak">3 days</strong>
+        <p class="muted">Teruskan kebiasaan baikmu.</p>
+      </article>
+      <article class="card stat-card">
+        <p class="eyebrow">CHALLENGES DONE</p>
+        <span class="bubble peach">✓</span>
+        <strong class="big" id="progressChallenges">1</strong>
+        <p class="muted">Tantangan diselesaikan.</p>
+      </article>
+      <article class="card stat-card">
+        <p class="eyebrow">ECO-POINTS</p>
+        <span class="bubble">✳</span>
+        <strong class="big" id="progressPoints">70</strong>
+        <p class="muted">Poin terkumpul.</p>
+      </article>
+    </div>
+
+    <article class="card gap-top">
+      <p class="eyebrow">THIS WEEK</p>
+      <h3>Setiap hari adalah kesempatan baru.</h3>
+      <div class="week" id="progressWeekGrid"></div>
+    </article>
+  </section>
+
+  <section class="view" id="view-community">
+    <div class="page-head">
+      <p class="eyebrow">BETTER, TOGETHER</p>
+      <h1>Loopify <em>community.</em></h1>
+      <p class="muted">Saling mendukung, tanpa membandingkan progres.</p>
+    </div>
+
+    <div class="two-col">
+      <article class="card">
+        <span class="bubble">♧</span>
+        <h2>Small steps are easier when we grow together.</h2>
+        <p class="muted">Komunitas pada prototype ini adalah simulasi. Bagikan kebiasaan kecilmu hari ini.</p>
+        <label for="communityPost">Your small step</label>
+        <textarea id="communityPost" rows="3" maxlength="180" placeholder="Hari ini aku ingin..."></textarea>
+        <button class="btn" id="sharePost">Bagikan progres</button>
+        <p id="communityMessage" class="message"></p>
+      </article>
+
+      <article class="card">
+        <p class="eyebrow">COMMUNITY NOTES</p>
+        <div id="communityFeed" class="feed"></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="view" id="view-rewards">
+    <div class="page-head">
+      <p class="eyebrow">CELEBRATE YOUR EFFORT</p>
+      <h1>Eco-Points <em>rewards.</em></h1>
+      <p class="muted">Poin demo untuk merayakan kebiasaan positifmu.</p>
+    </div>
+
+    <article class="card points-banner">
+      <p class="eyebrow">YOUR BALANCE</p>
+      <strong class="big"><span id="rewardsPoints">70</span> pts</strong>
+      <p class="muted">Reward hanya simulasi dan belum bisa ditukarkan di dunia nyata.</p>
+    </article>
+
+    <div class="challenge-grid gap-top">
+      <article class="card reward">
+        <span>🌱</span>
+        <h3>Green starter</h3>
+        <p class="muted">Lencana untuk memulai kebiasaan mindful.</p>
+        <b>Gratis · Demo badge</b>
+        <button class="btn outline full reward-claim" data-reward="starter" data-cost="0">Klaim lencana</button>
+      </article>
+
+      <article class="card reward">
+        <span>🌿</span>
+        <h3>Mindful grower</h3>
+        <p class="muted">Rayakan progres kecil yang konsisten.</p>
+        <b>50 Eco-Points</b>
+        <button class="btn outline full reward-claim" data-reward="grower" data-cost="50">Klaim reward</button>
+      </article>
+
+      <article class="card reward">
+        <span>🌳</span>
+        <h3>Earth ally</h3>
+        <p class="muted">Langkah yang lebih berkelanjutan.</p>
+        <b>100 Eco-Points</b>
+        <button class="btn outline full reward-claim" data-reward="ally" data-cost="100">Klaim reward</button>
+      </article>
+    </div>
+    <p id="rewardMessage" class="message"></p>
+  </section>
+
+  <section class="view" id="view-coach">
+    <div class="page-head">
+      <p class="eyebrow">A LITTLE SUPPORT</p>
+      <h1>Mindful <em>coach.</em></h1>
+      <p class="muted">Pilih situasi untuk mendapatkan saran sederhana.</p>
+    </div>
+
+    <article class="card coach">
+      <span class="bubble">☼</span>
+      <h2>What do you need today?</h2>
+      <label for="coachMood">Choose a situation</label>
+      <select id="coachMood">
+        <option value="overwhelmed">Aku overwhelmed karena layar</option>
+        <option value="focus">Aku sulit fokus</option>
+        <option value="consistency">Aku sulit konsisten</option>
+        <option value="eco">Aku ingin hidup lebih sustainable</option>
+      </select>
+      <button class="btn" id="getCoachTip">Get a gentle reminder</button>
+      <div id="coachResponse" class="coach-response" aria-live="polite">Kamu tidak harus mengubah semuanya sekaligus.</div>
+      <p class="muted small">Mindful Coach Lite menggunakan aturan sederhana di browser, bukan AI eksternal.</p>
+    </article>
+  </section>
+</main>
+</div>
+
+<div class="modal-backdrop" id="profileModal" aria-hidden="true">
+  <section class="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <button class="modal-close" id="closeProfile" type="button" aria-label="Close">×</button>
+    <p class="eyebrow">YOUR PERSONAL SPACE</p>
+    <h2 id="profileTitle">Profile settings</h2>
+    <p class="muted">Sesuaikan profil untuk pengalaman Loopify-mu.</p>
+
+    <div class="profile-preview">
+      <img id="profilePreview" alt="Profile preview">
+      <div>
+        <b id="profilePreviewName">Naya</b>
+        <p class="muted">Your mindful journey</p>
+      </div>
+    </div>
+
+    <form id="profileForm">
+      <label for="usernameInput">Username <span class="muted">(maks. 10 karakter)</span></label>
+      <input id="usernameInput" maxlength="10" required placeholder="Masukkan username">
+
+      <label for="genderInput">Gender</label>
+      <select id="genderInput">
+        <option value="female">Perempuan</option>
+        <option value="male">Laki-laki</option>
+      </select>
+
+      <label for="profileGoal">Personal goal</label>
+      <select id="profileGoal">
+        <option value="focus">Improve focus</option>
+        <option value="balance">Balance screen time</option>
+        <option value="sustainable">Live more sustainably</option>
+        <option value="mindful">Build mindful habits</option>
+      </select>
+
+      <button class="btn full" type="submit">Save profile</button>
+      <p class="message" id="profileMessage"></p>
+    </form>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
 
