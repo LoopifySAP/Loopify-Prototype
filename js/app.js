@@ -1,395 +1,467 @@
-
 (() => {
-  const $ = s => document.querySelector(s);
-  const $$ = s => [...document.querySelectorAll(s)];
-  const KEY = 'loopifyPrototypeV1';
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const STATE_KEY = "loopifyPrototypeState";
+  const PROFILE_KEY = "loopifyProfile";
 
   const defaults = {
-    points: 120,
-    minutes: 144,
-    target: 210,
-    completed: ['pause'],
-    total: 4,
+    screenMinutes: 334,
+    targetHours: 5,
+    points: 70,
+    completed: ["starter"],
     streak: 3,
-    reminder: true,
-    time: '14:00',
-    joined: false,
-    partner: '',
-    redeemed: []
+    posts: []
   };
 
-  let s = { ...defaults };
+  let state = { ...defaults };
+  let profile = {
+    username: "Naya",
+    gender: "female",
+    goal: "focus"
+  };
 
   try {
-    s = { ...s, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
-  } catch (e) {}
+    state = {
+      ...defaults,
+      ...JSON.parse(localStorage.getItem(STATE_KEY) || "{}")
+    };
+  } catch {}
 
-  let toastTimer;
+  try {
+    profile = {
+      ...profile,
+      ...JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}")
+    };
+  } catch {}
+
+  // Avatar ilustrasi dibuat langsung melalui SVG.
+  // Tidak memerlukan file gambar profil tambahan.
+  function avatar(gender) {
+    const hair = gender === "female" ? "#49372e" : "#302c27";
+
+    const hairstyle = gender === "female"
+      ? `<path d="M17 39C12 20 16 7 32 6 49 5 53 20 47 40l-7-3V22c-7 3-14 1-20-3v20z" fill="${hair}"/>`
+      : `<path d="M17 25C15 12 24 6 34 6c10 0 16 7 15 18l-7-4c-7 2-13 1-19-2z" fill="${hair}"/>`;
+
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="32" fill="#315a43"/>
+        <path d="M7 64c2-14 12-21 25-21s23 7 25 21" fill="#86a887"/>
+        ${hairstyle}
+        <ellipse cx="32" cy="28" rx="13" ry="16" fill="#d9a77e"/>
+        <circle cx="27" cy="29" r="1.3" fill="#352c25"/>
+        <circle cx="37" cy="29" r="1.3" fill="#352c25"/>
+        <path d="M28 36q4 4 8 0" fill="none" stroke="#8d5544" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>`;
+
+    return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+  }
 
   function save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify(s));
-    } catch (e) {}
+      localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    } catch {}
   }
 
-  function toast(t) {
-    const el = $('#toast');
-    el.textContent = t;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  function saveProfile() {
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch {}
   }
 
-  function fmt(n) {
-    let h = Math.floor(n / 60);
-    let m = n % 60;
-    return h && m ? `${h}j ${m}m` : h ? `${h}j` : `${m}m`;
+  function toast(message) {
+    const el = $("toast");
+    el.textContent = message;
+    el.classList.add("show");
+
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => {
+      el.classList.remove("show");
+    }, 2500);
   }
 
-  function pct() {
-    return Math.min(100, Math.round(s.minutes / s.target * 100));
+  function formatTime(minutes) {
+    return `${Math.floor(minutes / 60)}j ${minutes % 60}m`;
   }
 
-  // Navigasi antarhalaman
-  function go(v) {
-    const el = $('#view-' + v);
+  // Greeting in English, mengikuti waktu lokal perangkat.
+  function greeting() {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) return "morning";
+    if (hour >= 12 && hour < 15) return "afternoon";
+    if (hour >= 15 && hour < 18) return "evening";
+
+    return "night";
+  }
+
+  function renderDate() {
+    const now = new Date();
+
+    $("greetingTime").textContent = greeting();
+
+    $("currentDate").textContent =
+      new Intl.DateTimeFormat("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long"
+      }).format(now) + " · one small step at a time.";
+  }
+
+  function renderProfile() {
+    profile.username = (profile.username || "Naya")
+      .trim()
+      .slice(0, 10) || "Naya";
+
+    const image = avatar(profile.gender);
+
+    $("overviewUsername").textContent = profile.username + ".";
+    $("profileAvatar").src = image;
+    $("profilePreview").src = image;
+    $("profilePreviewName").textContent = profile.username;
+
+    $("usernameInput").value = profile.username;
+    $("genderInput").value = profile.gender;
+    $("profileGoal").value = profile.goal;
+  }
+
+  function renderWeek(id) {
+    const el = $(id);
     if (!el) return;
 
-    $$('.view').forEach(x => x.classList.toggle('active', x === el));
-    $$('.nav').forEach(x => x.classList.toggle('active', x.dataset.view === v));
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const today = (new Date().getDay() + 6) % 7;
 
-    $('#sidebar').classList.remove('open');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    el.replaceChildren();
+
+    days.forEach((day, index) => {
+      const wrap = document.createElement("div");
+      wrap.className = "week-day";
+
+      const label = document.createElement("span");
+      label.textContent = day;
+
+      const dot = document.createElement("div");
+      const done = index < Math.min(state.streak, 7);
+
+      dot.className =
+        "week-dot" +
+        (done ? " done" : "") +
+        (index === today ? " today" : "");
+
+      dot.textContent = done ? "✓" : "·";
+
+      wrap.append(label, dot);
+      el.append(wrap);
+    });
   }
 
-  $$('.nav').forEach(b =>
-    b.addEventListener('click', () => go(b.dataset.view))
-  );
-
-  $$('[data-go]').forEach(b =>
-    b.addEventListener('click', () => go(b.dataset.go))
-  );
-
-  $('#menu').addEventListener('click', () =>
-    $('#sidebar').classList.toggle('open')
-  );
-
-  // Tampilan progres mingguan
-  function week() {
-    const names = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-
-    $('#week').innerHTML = names.map((d, i) => `
-      <div class="day ${
-        i < 3 || (i === 3 && s.completed.length) ? 'done' : ''
-      } ${i === 3 ? 'today' : ''}">
-        <span>${d}</span>
-        <b>${i < 3 || (i === 3 && s.completed.length) ? '✓' : '·'}</b>
-      </div>
-    `).join('');
-  }
-
-  // Grafik aktivitas tujuh hari
-  function chart() {
-    const vals = [35, 55, 42, 68, 50, 76,
-      Math.min(95, 35 + s.completed.length * 10)];
-
-    $('#chart').innerHTML = vals.map((v, i) => `
-      <div class="barcol ${i === 6 ? 'current' : ''}">
-        <span class="barval">${v}%</span>
-        <div class="bar" style="--height:${v}%"></div>
-        <span>${['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'][i]}</span>
-      </div>
-    `).join('');
-  }
-
-  // Memperbarui tampilan dari state aplikasi
   function render() {
-    let p = pct();
-    let t = fmt(s.minutes);
+    const time = formatTime(state.screenMinutes);
+    const target = Math.max(1, state.targetHours * 60);
+    const percentage = Math.round(state.screenMinutes / target * 100);
 
-    ['#dash-time', '#tracker-time'].forEach(q => {
-      $(q).textContent = t;
+    const completedChallenges = state.completed.filter(key =>
+      ["break", "walk", "plant"].includes(key)
+    ).length;
+
+    $("screenTimeValue").textContent = time;
+    $("trackerTime").textContent = time;
+    $("screenTargetLabel").textContent = state.targetHours + "j";
+
+    $("screenProgressBar").style.width =
+      Math.min(100, percentage) + "%";
+
+    $("screenPercent").textContent = percentage + "% dari target";
+
+    ["pointsValue", "progressPoints", "rewardsPoints"].forEach(id => {
+      $(id).textContent = state.points;
     });
 
-    $('#dash-target').textContent = fmt(s.target);
-    $('#target-label').textContent = fmt(s.target);
-    $('#dash-percent').textContent = p + '% dari target';
-    $('#tracker-percent').textContent = p + '%';
-    $('#dash-fill').style.width = p + '%';
-    $('#tracker-fill').style.width = p + '%';
-    $('#target').value = String(s.target);
+    $("challengeDone").textContent = completedChallenges;
+    $("progressChallenges").textContent = completedChallenges;
+    $("streakValue").textContent = state.streak + "-day streak";
+    $("progressStreak").textContent = state.streak + " days";
 
-    $('#dash-points').textContent = s.points;
-    $('#reward-points').textContent = s.points;
+    $("screenHours").value = Math.floor(state.screenMinutes / 60);
+    $("screenMinutes").value = state.screenMinutes % 60;
+    $("screenTarget").value = String(state.targetHours);
 
-    let count = Math.min(3, s.completed.length);
+    renderWeek("weekGrid");
+    renderWeek("progressWeekGrid");
 
-    $('#dash-done').textContent = count;
-    $('#challenge-count').textContent = count;
-    $('#ring-label').textContent = Math.round(count / 3 * 100) + '%';
+    document.querySelectorAll(".challenge-complete").forEach(button => {
+      const alreadyDone = state.completed.includes(button.dataset.key);
 
-    $('#ring').style.background =
-      `conic-gradient(var(--green) ${count / 3 * 100}%, #cfdcc7 0)`;
-
-    $('#progress-total').textContent = s.total;
-    $('#progress-streak').innerHTML = `${s.streak} <small>hari</small>`;
-    $('#streak-chip').textContent = '✳ ' + s.streak + '-day streak';
-
-    // Status setiap tantangan
-    $$('.challenge').forEach(c => {
-      let done = s.completed.includes(c.dataset.id);
-      let b = $('.complete', c);
-
-      c.classList.toggle('completed', done);
-      b.disabled = done;
-      b.textContent = done ? '✓ Selesai hari ini' : 'Tandai selesai';
+      button.disabled = alreadyDone;
+      button.textContent = alreadyDone
+        ? "Completed ✓"
+        : `Selesaikan · +${button.dataset.points} poin`;
     });
 
-    // Pengingat
-    $('#reminder-toggle').checked = s.reminder;
-    $('#reminder-time').value = s.time;
+    document.querySelectorAll(".reward-claim").forEach(button => {
+      const claimed = state.completed.includes(
+        "reward-" + button.dataset.reward
+      );
 
-    // Komunitas dan partner
-    $('#partner-status').textContent = s.partner
-      ? `Ajakan simulasi sudah disiapkan untuk ${s.partner}.`
-      : 'Belum ada ajakan yang dikirim.';
-
-    $('#community-status').textContent = s.joined
-      ? 'Kamu sudah bergabung dengan tantangan demo ini. Let’s grow together!'
-      : 'Kamu belum bergabung dengan tantangan demo ini.';
-
-    $('#join').textContent = s.joined
-      ? 'Keluar dari demo challenge'
-      : 'Ikut tantangan (simulasi)';
-
-    // Status reward
-    $$('.reward').forEach(c => {
-      let done = s.redeemed.includes(c.dataset.reward);
-      let b = $('.redeem', c);
-
-      b.disabled = done;
-      b.textContent = done ? '✓ Ditukarkan' : 'Tukarkan';
+      button.disabled = claimed;
+      button.textContent = claimed
+        ? "Claimed ✓"
+        : button.dataset.cost === "0"
+          ? "Klaim lencana"
+          : "Klaim reward";
     });
-
-    week();
-    chart();
   }
 
-  // Menyelesaikan tantangan dan mendapatkan Eco-Points
-  $$('.complete').forEach(b => {
-    b.addEventListener('click', () => {
-      let c = b.closest('.challenge');
-      let id = c.dataset.id;
-
-      if (s.completed.includes(id)) return;
-
-      s.completed.push(id);
-      s.points += Number(c.dataset.points);
-      s.total++;
-
-      save();
-      render();
-
-      toast(`Tantangan selesai! +${c.dataset.points} Eco-Points 🌿`);
+  // Navigasi antarhalaman dashboard.
+  function go(view) {
+    document.querySelectorAll(".view").forEach(section => {
+      section.classList.toggle("active", section.id === "view-" + view);
     });
+
+    document.querySelectorAll(".nav-item").forEach(button => {
+      button.classList.toggle("active", button.dataset.view === view);
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.querySelectorAll(".nav-item").forEach(button => {
+    button.addEventListener("click", () => go(button.dataset.view));
   });
 
-  // Simulasi penambahan screen time
-  $('#add-time').addEventListener('click', () => {
-    let n = Number($('#extra-minutes').value);
+  document.querySelectorAll("[data-go]").forEach(button => {
+    button.addEventListener("click", () => go(button.dataset.go));
+  });
 
-    if (!Number.isFinite(n) || n < 5 || n > 120) {
-      toast('Masukkan durasi antara 5–120 menit.');
+  // Profile modal.
+  const modal = $("profileModal");
+
+  function openModal() {
+    renderProfile();
+    $("profileMessage").textContent = "";
+
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    $("usernameInput").focus();
+  }
+
+  function closeModal() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    $("profileButton").focus();
+  }
+
+  $("profileButton").addEventListener("click", openModal);
+  $("closeProfile").addEventListener("click", closeModal);
+
+  modal.addEventListener("click", event => {
+    if (event.target === modal) closeModal();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("is-open")) {
+      closeModal();
+    }
+  });
+
+  // Preview profil berubah saat username atau gender diubah.
+  $("usernameInput").addEventListener("input", () => {
+    $("usernameInput").value = $("usernameInput").value.slice(0, 10);
+    $("profilePreviewName").textContent =
+      $("usernameInput").value || "Naya";
+  });
+
+  $("genderInput").addEventListener("change", () => {
+    $("profilePreview").src = avatar($("genderInput").value);
+  });
+
+  $("profileForm").addEventListener("submit", event => {
+    event.preventDefault();
+
+    const username = $("usernameInput").value.trim().slice(0, 10);
+
+    if (!username) {
+      $("profileMessage").textContent = "Username tidak boleh kosong.";
       return;
     }
 
-    s.minutes += n;
-    save();
-    render();
+    profile = {
+      username,
+      gender: $("genderInput").value,
+      goal: $("profileGoal").value
+    };
 
-    toast(`Screen time simulasi bertambah ${n} menit.`);
+    saveProfile();
+    renderProfile();
+
+    $("profileMessage").textContent = "Profile saved successfully.";
+    toast("Profile berhasil disimpan.");
+
+    setTimeout(closeModal, 350);
   });
 
-  // Mengubah target harian
-  $('#target').addEventListener('change', e => {
-    s.target = Number(e.target.value);
+  // Screen time manual tracker.
+  $("saveScreenTime").addEventListener("click", () => {
+    const hours = Number($("screenHours").value);
+    const minutes = Number($("screenMinutes").value);
+    const target = Number($("screenTarget").value);
 
-    save();
-    render();
+    if (
+      !Number.isInteger(hours) || hours < 0 || hours > 23 ||
+      !Number.isInteger(minutes) || minutes < 0 || minutes > 59
+    ) {
+      $("trackerMessage").textContent =
+        "Masukkan jam 0–23 dan menit 0–59.";
+      return;
+    }
 
-    toast('Target harian diperbarui.');
-  });
-
-  // Mengaktifkan atau menonaktifkan pengingat demo
-  $('#reminder-toggle').addEventListener('change', e => {
-    s.reminder = e.target.checked;
-    save();
-
-    $('#reminder-status').textContent = s.reminder
-      ? `Pengingat demo aktif pukul ${s.time}; notifikasi otomatis belum diaktifkan.`
-      : 'Pengingat demo dinonaktifkan.';
-  });
-
-  // Menyimpan pengaturan pengingat
-  $('#save-reminder').addEventListener('click', () => {
-    s.time = $('#reminder-time').value || '14:00';
-    s.reminder = $('#reminder-toggle').checked;
-
-    save();
-
-    $('#reminder-status').textContent = s.reminder
-      ? `Pengaturan tersimpan: pengingat demo pukul ${s.time}. Belum ada notifikasi otomatis.`
-      : 'Pengingat dinonaktifkan.';
-
-    toast('Pengaturan pengingat disimpan.');
-  });
-
-  // Simulasi ajakan accountability partner
-  $('#invite').addEventListener('click', () => {
-    s.partner = $('#partner').value.split(' · ')[0];
+    state.screenMinutes = hours * 60 + minutes;
+    state.targetHours = target;
 
     save();
     render();
 
-    toast(`Ajakan demo disiapkan untuk ${s.partner}.`);
+    $("trackerMessage").textContent =
+      "Screen time berhasil diperbarui.";
+
+    toast("Screen time updated.");
   });
 
-  // Bergabung atau keluar dari tantangan komunitas
-  $('#join').addEventListener('click', () => {
-    s.joined = !s.joined;
+  // Daily challenges.
+  document.querySelectorAll(".challenge-complete").forEach(button => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.key;
 
-    save();
-    render();
+      if (state.completed.includes(key)) return;
 
-    toast(
-      s.joined
-        ? 'Kamu bergabung! 🌱'
-        : 'Kamu keluar dari tantangan demo.'
-    );
-  });
-
-  // Menukarkan Eco-Points
-  $$('.redeem').forEach(b => {
-    b.addEventListener('click', () => {
-      let c = b.closest('.reward');
-      let id = c.dataset.reward;
-      let cost = Number(c.dataset.cost);
-
-      if (s.redeemed.includes(id)) return;
-
-      if (s.points < cost) {
-        toast('Poinmu belum cukup untuk reward ini.');
-        return;
-      }
-
-      s.points -= cost;
-      s.redeemed.push(id);
+      state.completed.push(key);
+      state.points += Number(button.dataset.points);
+      state.streak = Math.max(4, state.streak);
 
       save();
       render();
 
-      $('#reward-status').textContent =
-        `Reward “${$('h3', c).textContent}” ditukarkan dalam simulasi. Tidak ada reward nyata yang dikirim.`;
+      $("challengeMessage").textContent =
+        "Tantangan selesai dan Eco-Points ditambahkan.";
 
-      toast(`Reward demo ditukarkan. −${cost} poin.`);
+      toast("Challenge completed!");
     });
   });
 
-  // Basis aturan untuk Mindful Coach Lite
-  const advice = {
-    focus: {
-      low: [
-        'Mulai dengan target ringan.',
-        'Pilih satu tugas kecil selama beberapa menit, lalu istirahat jika perlu.',
-        'Fokus singkat'
-      ],
-      medium: [
-        'Buat ruang untuk satu hal.',
-        'Letakkan notifikasi di luar perhatian dan kerjakan satu tugas selama waktu pilihanmu.',
-        'Satu tugas, satu waktu'
-      ],
-      high: [
-        'Manfaatkan energi dengan realistis.',
-        'Coba satu sesi fokus tanpa berpindah aplikasi, lalu sisipkan jeda.',
-        'Sesi fokus mindful'
-      ]
-    },
-    rest: {
-      low: [
-        'Istirahat juga progres.',
-        'Duduk nyaman, minum air, dan jauhkan layar sebentar.',
-        'Jeda lembut'
-      ],
-      medium: [
-        'Beri mata dan pikiran ruang.',
-        'Peregangan ringan atau lihat pemandangan jauh dari layar.',
-        'Jeda dari layar'
-      ],
-      high: [
-        'Arahkan energi ke dunia nyata.',
-        'Coba jalan singkat tanpa membuka ponsel jika situasinya aman.',
-        'Jalan mindful'
-      ]
-    },
-    sleep: {
-      low: [
-        'Tidak perlu mengubah semuanya.',
-        'Letakkan ponsel sedikit lebih jauh saat bersiap tidur.',
-        'Persiapan tidur tenang'
-      ],
-      medium: [
-        'Buat akhir hari lebih pelan.',
-        'Pilih waktu tanpa scrolling sebelum tidur dan lakukan rutinitas tenang.',
-        'Jeda sebelum tidur'
-      ],
-      high: [
-        'Coba batas kecil yang konsisten.',
-        'Atur pengingat untuk mulai winding down dan ganti scrolling dengan membaca.',
-        'Waktu winding down'
-      ]
-    },
-    green: {
-      low: [
-        'Aktivitas kecil tetap berarti.',
-        'Rawat tanaman atau rapikan satu sudut kecil di sekitarmu.',
-        'Satu aksi kecil'
-      ],
-      medium: [
-        'Isi jeda layar dengan hal nyata.',
-        'Siram tanaman, rapikan sudut, atau berjalan singkat.',
-        'Aksi kecil yang hijau'
-      ],
-      high: [
-        'Satukan jeda digital dengan aksi positif.',
-        'Ajak seseorang melakukan aktivitas singkat di luar layar.',
-        'Grow together'
-      ]
+  // Community demo feed.
+  function renderPosts() {
+    const feed = $("communityFeed");
+    feed.replaceChildren();
+
+    const posts = [
+      ...(state.posts || []),
+      {
+        username: "Rani",
+        message: "Hari ini mencoba makan siang tanpa scroll. Rasanya lebih hadir."
+      },
+      {
+        username: "Arga",
+        message: "Mulai dari jeda 10 menit dulu. Small steps count!"
+      }
+    ];
+
+    posts.forEach(post => {
+      const item = document.createElement("div");
+      item.className = "feed-item";
+
+      const name = document.createElement("strong");
+      name.textContent = post.username;
+
+      const message = document.createElement("p");
+      message.textContent = post.message;
+
+      item.append(name, message);
+      feed.append(item);
+    });
+  }
+
+  $("sharePost").addEventListener("click", () => {
+    const input = $("communityPost");
+    const message = input.value.trim();
+
+    if (!message) {
+      $("communityMessage").textContent =
+        "Tulis satu langkah kecilmu terlebih dahulu.";
+      return;
     }
-  };
 
-  $('#coach-button').addEventListener('click', () => {
-    let goal = $('#goal').value;
-    let time = $('#time-choice').value;
-    let energy = $('input[name="energy"]:checked').value;
+    state.posts = [
+      { username: profile.username, message },
+      ...(state.posts || [])
+    ].slice(0, 8);
 
-    let [title, text, action] = advice[goal][energy];
+    save();
+    renderPosts();
 
-    $('#coach-title').textContent = title;
-    $('#coach-text').textContent = text;
-    $('#coach-action').textContent = `${action} · ${time} menit`;
-    $('#coach-detail').textContent =
-      `Coba selama ${time} menit jika terasa nyaman. Kamu boleh menyesuaikan atau melewatkannya sesuai kebutuhan.`;
+    input.value = "";
+    $("communityMessage").textContent =
+      "Progres dibagikan dalam demo ini.";
 
-    toast('Saran mindful personal dibuat.');
+    toast("Your small step has been shared.");
   });
 
-  // Tanggal pada header
-  $('#date').textContent =
-    new Date().toLocaleDateString('id-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long'
-    }) + ' · satu langkah kecil.';
+  // Rewards demo.
+  document.querySelectorAll(".reward-claim").forEach(button => {
+    button.addEventListener("click", () => {
+      const key = "reward-" + button.dataset.reward;
+      const cost = Number(button.dataset.cost);
 
+      if (state.completed.includes(key)) return;
+
+      if (state.points < cost) {
+        $("rewardMessage").textContent =
+          "Eco-Points belum cukup untuk reward ini.";
+        return;
+      }
+
+      state.points -= cost;
+      state.completed.push(key);
+
+      save();
+      render();
+
+      $("rewardMessage").textContent =
+        "Reward berhasil diklaim dalam mode demo.";
+
+      toast("Reward claimed!");
+    });
+  });
+
+  // Mindful Coach Lite: rule-based responses.
+  const tips = {
+    overwhelmed:
+      "Coba letakkan ponsel selama 5–10 menit, tarik napas perlahan, lalu pilih satu hal kecil yang ingin kamu lakukan.",
+    focus:
+      "Pilih satu tugas, matikan gangguan yang tidak diperlukan, dan fokus selama 10 menit.",
+    consistency:
+      "Turunkan target sampai terasa realistis. Mengulang satu langkah kecil lebih berguna daripada menuntut perubahan sempurna.",
+    eco:
+      "Pilih satu aksi hari ini: berjalan untuk jarak dekat, merawat tanaman, atau membawa botol minum sendiri."
+  };
+
+  $("getCoachTip").addEventListener("click", () => {
+    $("coachResponse").textContent = tips[$("coachMood").value];
+  });
+
+  // Initial render.
+  renderDate();
+  renderProfile();
   render();
+  renderPosts();
+  saveProfile();
+
+  // Update greeting and date when returning to the tab.
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) renderDate();
+  });
+
+  // Keep the displayed date and greeting current.
+  setInterval(renderDate, 60000);
 })();
