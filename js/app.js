@@ -75,10 +75,10 @@
 
   function greeting() {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return "morning";
-    if (h >= 12 && h < 15) return "afternoon";
-    if (h >= 15 && h < 18) return "evening";
-    return "night";
+    if (h >= 5 && h < 12) return "Morning";
+    if (h >= 12 && h < 15) return "Afternoon";
+    if (h >= 15 && h < 18) return "Evening";
+    return "Night";
   }
 
   function renderDate() {
