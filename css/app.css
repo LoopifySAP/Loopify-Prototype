@@ -984,3 +984,90 @@ select option {
     transition-duration: .01ms !important;
   }
 }
+
+/* LOOPIFY — subtle organic background motifs */
+
+body {
+  background-color: #f7f5ec;
+  background-image:
+    radial-gradient(
+      ellipse at 90% 5%,
+      rgba(173, 194, 157, 0.16) 0%,
+      transparent 32%
+    ),
+    radial-gradient(
+      ellipse at 10% 65%,
+      rgba(213, 222, 199, 0.20) 0%,
+      transparent 35%
+    );
+  background-attachment: fixed;
+}
+
+/* Gentle decorative waves on the main content */
+.main {
+  position: relative;
+  isolation: isolate;
+}
+
+.main::before {
+  content: "";
+  position: absolute;
+  top: 100px;
+  right: -20px;
+  width: 260px;
+  height: 260px;
+  border-radius: 42% 58% 63% 37% / 45% 42% 58% 55%;
+  background: rgba(199, 215, 184, 0.14);
+  transform: rotate(-18deg);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Subtle accent inside cards */
+.card {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-top,
+.card > h2,
+.card > h3,
+.card > p,
+.card > div,
+.card > button,
+.card > label,
+.card > input,
+.card > select,
+.card > textarea {
+  position: relative;
+  z-index: 1;
+}
+
+/* Soft organic accent for the welcome heading */
+.welcome {
+  position: relative;
+}
+
+/* Keep the profile popup clean and readable */
+.profile-modal {
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(191, 210, 177, 0.24),
+      transparent 42%
+    ),
+    #f7f5ec;
+}
+
+/* Reduce decoration on smaller screens */
+@media (max-width: 800px) {
+  .main::before {
+    width: 160px;
+    height: 160px;
+    top: 110px;
+    right: -40px;
+  }
+}
+
+/* Respect reduced-motion and contrast preferences:
+   these background decorations have no animation. */
