@@ -40,13 +40,6 @@ button { cursor: pointer; }
   z-index: 5;
 }
 
-.brand-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
 .brand {
   display: inline-flex;
   align-items: center;
